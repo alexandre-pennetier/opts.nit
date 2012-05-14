@@ -262,17 +262,28 @@ class OptionContext
 		while parseargs and it.is_ok do
 			var str = it.item
 			if str == "--" then
-				it.next
 				rest.add_all(it.to_a)
 				parseargs = false
 			else
-				if _optmap.has_key(str) then
-					var opt = _optmap[str]
+				# We're looking for packed short options
+				if str.last_index_of('-') == 0 and str.length > 2 then
+					for i in [1..str.length] do
+						var short_opt = "-" + str[i].to_s
+						if _optmap.has_key(short_opt) then
+							if _optmap[short_opt] isa OptionParameter  then it.next
+							_optmap[short_opt].read_param(it)
+						end
+					end
 					it.next
-					opt.read_param(it)
-				else
-					rest.add(it.item)
-					it.next
+			  else 
+					if _optmap.has_key(str) then
+						var opt = _optmap[str]
+						it.next
+						opt.read_param(it)
+					else
+						rest.add(it.item)
+						it.next
+					end
 				end
 			end
 		end
